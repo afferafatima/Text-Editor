@@ -162,6 +162,7 @@ public:
         }
         undo.push_back(getState());
     }
+    //left arrow key
     void leftOperation()
     {
         if (colItr == (*rowItr).begin())
@@ -177,7 +178,7 @@ public:
                 colItr = (*rowItr).begin();
                 currentRow--;
                 advance(colItr, (*rowItr).size() - 1);
-                currentCol = (*rowItr).size();
+                currentCol = (*rowItr).size() - 1;
             }
         }
         else
@@ -187,13 +188,17 @@ public:
         }
         gotoRowColomn(currentRow, currentCol);
     }
+    //right arrow key
     void rightOperation()
     {
+        
+        colItr++;
         if (colItr == (*rowItr).end())
         {
-            if (rowItr == text.end() || currentRow >= text.size() - 2)
+            if (currentRow == text.size()-1 )//rowItr==text.end() not working 
             {
                 // cout << "No character to move right" << endl;
+                colItr--;
                 return;
             }
             else
@@ -206,33 +211,38 @@ public:
         }
         else
         {
-            colItr++;
+           
+            // colItr++;done it at start
             currentCol++;
         }
         gotoRowColomn(currentRow, currentCol);
     }
+    //up arrow key
     void upOperation()
     {
         if (rowItr == text.begin())
         {
+            // cout<<"No character to move up";
             return;
         }
         rowItr--;
-        if (currentCol > (*rowItr).size())
+        if (currentCol > (*rowItr).size()-1)
         {
-            currentCol = (*rowItr).size();
-            colItr = (*rowItr).end();
+            currentCol = (*rowItr).size()-1;
+            advance(colItr,currentCol);
         }
-        else
+        else if(currentCol<(*rowItr).size())
         {
             colItr = (*rowItr).begin();
+            advance(colItr, currentCol);
         }
         currentRow--;
         gotoRowColomn(currentRow, currentCol);
     }
+    //down key
     void downOperation()
     {
-        if (rowItr == text.end() || currentRow >= text.size() - 1)
+        if (currentRow >= text.size() - 1)//already at the last row
         {
             // cout<<"No character to move down";
             return;
@@ -240,22 +250,14 @@ public:
         rowItr++;
         if (currentCol > (*rowItr).size() - 1)
         {
-            gotoRowColomn(0, 15);
-            cout << "currentCol: " << currentCol << " rowItr size: " << (*rowItr).size();
-            currentCol = (*rowItr).size();
-            colItr = (*rowItr).end();
+            currentCol = (*rowItr).size()-1;
+            colItr = (*rowItr).begin();
+            advance(colItr,currentCol);
         }
         else if (currentCol < (*rowItr).size())
         {
             colItr = (*rowItr).begin();
             advance(colItr, currentCol);
-
-            cout << *colItr;
-        }
-        else
-        {
-            colItr = (*rowItr).begin();
-            currentCol = 0;
         }
         currentRow++;
         gotoRowColomn(currentRow, currentCol);
@@ -401,7 +403,7 @@ public:
         {
             for (auto itr2 = (*itr).begin(); itr2 != (*itr).end(); itr2++)
             {
-                if(*itr2 != '\n')
+                if (*itr2 != '\n')
                     file << *itr2;
             }
             // Check if it's the last row before adding a newline
