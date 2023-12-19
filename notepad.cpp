@@ -136,7 +136,7 @@ public:
             }
             else
             {
-                (*rowItr).pop_back();
+                (*rowItr).pop_back();//removes last endline character
                 auto nextRowItr = next(rowItr);
                 (*rowItr).splice((*rowItr).end(), *nextRowItr);
                 text.erase(nextRowItr);
@@ -278,6 +278,7 @@ public:
 
         undo.push_back(getState());
     }
+    
     void backSpaceOperation()
     {
         undo.push_back(getState());
@@ -287,10 +288,11 @@ public:
             if (rowItr != text.begin())
             {
                 auto prevRowItr = prev(rowItr);
-
+                (*prevRowItr).pop_back(); // remove the end line character
                 // Move the cursor to the end of the previous line
-                colItr = (*prevRowItr).end();
-
+                colItr = (*prevRowItr).begin();
+                currentCol = (*prevRowItr).size();
+                
                 // Merge the current line into the previous line
                 (*prevRowItr).splice((*prevRowItr).end(), *rowItr);
 
@@ -298,16 +300,17 @@ public:
                 text.erase(rowItr);
 
                 // Update iterators and counters
+                advance(colItr, currentCol);
                 rowItr = prevRowItr;
                 currentRow--;
-                currentCol = (*rowItr).size();
             }
         }
         else
         {
+            
             colItr--;
-            currentCol--;
             colItr = (*rowItr).erase(colItr);
+            currentCol--;
         }
     }
     //main input function
@@ -334,10 +337,10 @@ public:
             // {
             //     newLineOperation();
             // }
-            // else if (ch == 8) // backspace
-            // {
-            //     backSpaceOperation();
-            // }
+            else if (ch == 8) // backspace
+            {
+                backSpaceOperation();
+            }
             if (ch == 27) // escape
             {
                 break;
