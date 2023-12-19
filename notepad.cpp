@@ -127,42 +127,31 @@ public:
     // delete key
     void deleteOperation()
     {
-        if (colItr == (*rowItr).end())
+        if (currentCol == (*rowItr).size() - 1)
         {
-            if (rowItr == text.end())
+            if (currentRow==text.size()-1)// rowItr == text.end() not working
             {
                 // cout << "No character to delete" << endl;
                 return;
             }
             else
             {
-                // if ((*rowItr).size() == 1)
-                // {
-                //     text.erase(rowItr);
-                //     rowItr = text.end();
-                //     rowItr--;
-                //     colItr = (*rowItr).end();
-                //     currentRow--;
-                //     currentCol = (*rowItr).size();
-                // }
-                // else
-                {
-
-                    auto nextRowItr = next(rowItr);
-                    (*rowItr).splice((*rowItr).end(), *nextRowItr);
-                    text.erase(nextRowItr);
-                    undo.push_back(getState());
-                }
+                (*rowItr).pop_back();
+                auto nextRowItr = next(rowItr);
+                (*rowItr).splice((*rowItr).end(), *nextRowItr);
+                text.erase(nextRowItr);
+                undo.push_back(getState());
             }
         }
         else
         {
-            colItr = (*rowItr).erase(colItr);
-            currentCol--;
+            (*rowItr).erase(colItr);
+            colItr=(*rowItr).begin();
+            advance(colItr,currentCol);
         }
-        undo.push_back(getState());
+        gotoRowColomn(currentRow, currentCol);
     }
-    //left arrow key
+    // left arrow key
     void leftOperation()
     {
         if (colItr == (*rowItr).begin())
@@ -188,14 +177,14 @@ public:
         }
         gotoRowColomn(currentRow, currentCol);
     }
-    //right arrow key
+    // right arrow key
     void rightOperation()
     {
-        
+
         colItr++;
         if (colItr == (*rowItr).end())
         {
-            if (currentRow == text.size()-1 )//rowItr==text.end() not working 
+            if (currentRow == text.size() - 1) // rowItr==text.end() not working
             {
                 // cout << "No character to move right" << endl;
                 colItr--;
@@ -211,13 +200,13 @@ public:
         }
         else
         {
-           
+
             // colItr++;done it at start
             currentCol++;
         }
         gotoRowColomn(currentRow, currentCol);
     }
-    //up arrow key
+    // up arrow key
     void upOperation()
     {
         if (rowItr == text.begin())
@@ -226,12 +215,12 @@ public:
             return;
         }
         rowItr--;
-        if (currentCol > (*rowItr).size()-1)
+        if (currentCol > (*rowItr).size() - 1)
         {
-            currentCol = (*rowItr).size()-1;
-            advance(colItr,currentCol);
+            currentCol = (*rowItr).size() - 1;
+            advance(colItr, currentCol);
         }
-        else if(currentCol<(*rowItr).size())
+        else if (currentCol < (*rowItr).size())
         {
             colItr = (*rowItr).begin();
             advance(colItr, currentCol);
@@ -239,10 +228,10 @@ public:
         currentRow--;
         gotoRowColomn(currentRow, currentCol);
     }
-    //down key
+    // down key
     void downOperation()
     {
-        if (currentRow >= text.size() - 1)//already at the last row
+        if (currentRow >= text.size() - 1) // already at the last row
         {
             // cout<<"No character to move down";
             return;
@@ -250,9 +239,9 @@ public:
         rowItr++;
         if (currentCol > (*rowItr).size() - 1)
         {
-            currentCol = (*rowItr).size()-1;
+            currentCol = (*rowItr).size() - 1;
             colItr = (*rowItr).begin();
-            advance(colItr,currentCol);
+            advance(colItr, currentCol);
         }
         else if (currentCol < (*rowItr).size())
         {
@@ -262,6 +251,7 @@ public:
         currentRow++;
         gotoRowColomn(currentRow, currentCol);
     }
+    // enter key
     void newLineOperation()
     {
         // Insert a newline character at the current position
@@ -320,6 +310,7 @@ public:
             colItr = (*rowItr).erase(colItr);
         }
     }
+    //main input function
     void input()
     {
         char ch;
@@ -381,6 +372,7 @@ public:
             }
         }
     }
+    //insert in notepad
     void insertOperation(char ch)
     {
         if (isValidInput(ch))
@@ -394,7 +386,6 @@ public:
             currentCol++;
         }
     }
-
     void save(string filename = "test.txt")
     {
         ofstream file;
@@ -420,6 +411,7 @@ public:
         string line;
         reader.open(fileName);
         rowItr = text.begin();
+        (*rowItr).pop_back(); // remove the end line character
         colItr = (*rowItr).begin();
         while (getline(reader, line))
         {
