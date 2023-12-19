@@ -266,7 +266,7 @@ public:
         (*rowItr).insert(colItr, '\n');
 
         // Create a new line with the content after the newline character
-        auto temp=rowItr;
+        auto temp = rowItr;
         auto newRowItr = std::next(rowItr);
         list<char> newRow(colItr, (*rowItr).end());
         (*rowItr).erase(colItr, (*rowItr).end());
@@ -323,29 +323,29 @@ public:
         char ch;
         while (true)
         {
-            print();
+            printText();
             ch = _getch();
-            if (ch == 26) // ctrl+z
-            {
-                undoOperation();
-            }
-            else if (ch == 25) // ctrl+y
-            {
-                redoOperation();
-            }
+            // if (ch == 26) // ctrl+z
+            // {
+            //     undoOperation();
+            // }
+            // else if (ch == 25) // ctrl+y
+            // {
+            //     redoOperation();
+            // }
             if (ch == 19) // ctrl+s
             {
                 save();
             }
-            else if (ch == 13) // enter key
-            {
-                newLineOperation();
-            }
-            else if (ch == 8) // backspace
-            {
-                backSpaceOperation();
-            }
-            else if (ch == 27) // escape
+            // else if (ch == 13) // enter key
+            // {
+            //     newLineOperation();
+            // }
+            // else if (ch == 8) // backspace
+            // {
+            //     backSpaceOperation();
+            // }
+            if (ch == 27) // escape
             {
                 break;
             }
@@ -387,13 +387,13 @@ public:
 
             (*rowItr).insert(colItr, ch);
             colItr = (*rowItr).begin();
-            colItr=next(colItr, offset);//points to the same character that is inserted
+            colItr = next(colItr, offset); // points to the same character that is inserted
             colItr++;
             currentCol++;
         }
     }
 
-    void save()
+    void save(string filename = "test.txt")
     {
         ofstream file;
         file.open(fileName);
@@ -401,56 +401,72 @@ public:
         {
             for (auto itr2 = (*itr).begin(); itr2 != (*itr).end(); itr2++)
             {
-                file << *itr2;
+                if(*itr2 != '\n')
+                    file << *itr2;
             }
-            file << '\n';
+            // Check if it's the last row before adding a newline
+            if (next(itr) != text.end())
+            {
+                file << '\n';
+            }
         }
         file.close();
     }
-    void load()
+    void load(string filename = "test.txt")
     {
         ifstream reader;
+        string line;
         reader.open(fileName);
-        char ch;
-        (*rowItr).pop_back();
-        while (reader.get(ch))
-        {
-            if (ch != '\n')
-            {
-                (*rowItr).push_back(ch);
-            }
-            else
-            {
-                // Check if the line is not empty before adding it
-                if (!(*rowItr).empty())
-                {
-                    text.push_back(list<char>());
-                    rowItr++;
-                }
-            }
-        }
-
-        (*rowItr).pop_back();
-        reader.close();
         rowItr = text.begin();
         colItr = (*rowItr).begin();
+        while (getline(reader, line))
+        {
+            // insert char by char in row iterator
+            for (size_t ch = 0; ch < line.size(); ch++)
+            {
+                (*rowItr).insert(colItr, line[ch]);
+            }
 
-        currentRow = 0;
-        currentCol = 0;
-        gotoRowColomn(currentRow, currentCol);
+            (*rowItr).insert(colItr, '\n');                 // last character must be end line character
+            text.push_back(list<char>());                   // create new row
+            size_t offset = distance(text.begin(), rowItr); // current row iterator
+            rowItr = text.begin();                          // to avoid any error
+            advance(rowItr, offset + 1);                    // next row of current row
+            colItr = (*rowItr).begin();
+        }
+        text.pop_back(); // last row is empty
+        reader.close();
+        updateItrToLast();
     }
-    void print()
+    void updateItrToLast()
+    {
+        rowItr = text.begin();
+        currentRow = text.size() - 1;
+        advance(rowItr, currentRow);
+        colItr = (*rowItr).begin();
+        advance(colItr, (*rowItr).size() - 1); // pointing to the end line character '\n'
+        currentCol = (*rowItr).size() - 1;
+    }
+    void printText()
     {
         system("cls");
         for (auto itr = text.begin(); itr != text.end(); itr++)
         {
-            for (auto itr2 = (*itr).begin(); itr2 != (*itr).end(); itr2++)
+            for (auto itr2 = (*itr).begin(); *itr2 != '\n'; itr2++)
             {
                 cout << *itr2;
             }
             cout << '\n';
         }
         gotoRowColomn(currentRow, currentCol);
+    }
+    void printRow(list<list<char>>::iterator rowItr)
+    {
+        gotoRowColomn(currentRow, 0);
+        for (auto colItr = rowItr->begin(); colItr != rowItr->end(); colItr++)
+        {
+            cout << *colItr;
+        }
     }
     bool isValidInput(char ch)
     {
@@ -503,8 +519,9 @@ void writeFiles(string newFile, string fileName = "files.txt")
 int main()
 {
     system("color F0");
-    textEditor editor;
+    textEditor editor = textEditor();
     readFiles();
+
     editor.load();
     editor.input();
 
