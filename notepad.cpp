@@ -50,7 +50,10 @@ public:
         state *s = new state;
         s->text.push_back(list<char>());
         auto r_itr = s->text.begin(); // iterator of state s
-
+        s->row = currentRow;
+        s->col = currentCol;
+        s->colItr = colItr;
+        s->rowItr = rowItr;
         // Iterate through each row in the currentFile's text(deep copy)
         for (auto row = text.begin(); row != text.end(); r_itr++, ++row)
         {
@@ -75,8 +78,6 @@ public:
         advance(s->colItr, currentCol); // loop
 
         // Set the row and column indices in the state
-        s->row = currentRow;
-        s->col = currentCol;
 
         return *s;
     }
@@ -86,15 +87,25 @@ public:
         rowItr = text.begin();
         currentRow = s.row;
         currentCol = s.col;
-        for (auto row = 0; row < s.row; row++)
-        {
-            rowItr++;
-        }
+        advance(rowItr, currentRow);
         colItr = (*rowItr).begin();
-        for (auto col = 0; col < s.col; col++)
+        advance(colItr, currentCol);
+    }
+    void debug()
+    {
+        cout << "currentRow: " << currentRow << endl;
+        cout << "currentCol: " << currentCol << endl;
+        cout << "colItr: " << *colItr << endl;
+        cout << "rowItr: " << (*rowItr).size() << endl;
+        for (auto itr = text.begin(); itr != text.end(); itr++)
         {
-            colItr++;
+            for (auto itr2 = (*itr).begin(); itr2 != (*itr).end(); itr2++)
+            {
+                cout << *itr2;
+            }
+            cout << endl;
         }
+        getch();
     }
     void undoOperation()
     {
@@ -102,10 +113,6 @@ public:
         {
             // cout << "No undo operation available" << endl;
             return;
-        }
-        if (undo.size() > 5)
-        {
-            undo.pop_front();
         }
         redo.push(getState());
         state s = undo.back();
@@ -119,41 +126,51 @@ public:
             // cout << "No redo operation available" << endl;
             return;
         }
-        undo.push_back(getState());
+        updateUndo();
         state s = redo.top();
         redo.pop();
         loadState(s);
     }
+    void updateUndo()
+    {
+        if (undo.size() > 5)
+        {
+            undo.erase(undo.begin());
+        }
+        state s = getState();
+        undo.push_back(s);
+    }
     // delete key
     void deleteOperation()
     {
+        updateUndo();
         if (currentCol == (*rowItr).size() - 1)
         {
-            if (currentRow==text.size()-1)// rowItr == text.end() not working
+            if (currentRow == text.size() - 1) // rowItr == text.end() not working
             {
                 // cout << "No character to delete" << endl;
                 return;
             }
             else
             {
-                (*rowItr).pop_back();//removes last endline character
+                (*rowItr).pop_back(); // removes last endline character
                 auto nextRowItr = next(rowItr);
                 (*rowItr).splice((*rowItr).end(), *nextRowItr);
                 text.erase(nextRowItr);
-                undo.push_back(getState());
             }
         }
         else
         {
             (*rowItr).erase(colItr);
-            colItr=(*rowItr).begin();
-            advance(colItr,currentCol);
+            colItr = (*rowItr).begin();
+            advance(colItr, currentCol);
         }
         gotoRowColomn(currentRow, currentCol);
     }
     // left arrow key
     void leftOperation()
     {
+
         if (colItr == (*rowItr).begin())
         {
             if (rowItr == text.begin())
@@ -180,7 +197,6 @@ public:
     // right arrow key
     void rightOperation()
     {
-
         colItr++;
         if (colItr == (*rowItr).end())
         {
@@ -200,7 +216,6 @@ public:
         }
         else
         {
-
             // colItr++;done it at start
             currentCol++;
         }
@@ -209,6 +224,7 @@ public:
     // up arrow key
     void upOperation()
     {
+
         if (rowItr == text.begin())
         {
             // cout<<"No character to move up";
@@ -231,11 +247,13 @@ public:
     // down key
     void downOperation()
     {
+
         if (currentRow >= text.size() - 1) // already at the last row
         {
             // cout<<"No character to move down";
             return;
         }
+
         rowItr++;
         if (currentCol > (*rowItr).size() - 1)
         {
@@ -254,34 +272,26 @@ public:
     // enter key
     void newLineOperation()
     {
-        // Insert a newline character at the current position
-        (*rowItr).insert(colItr, '\n');
 
-        // Create a new line with the content after the newline character
-        auto temp = rowItr;
-        auto newRowItr = std::next(rowItr);
+        auto nextRowItr = next(rowItr);
         list<char> newRow(colItr, (*rowItr).end());
         (*rowItr).erase(colItr, (*rowItr).end());
+        (*rowItr).push_back('\n');
+        text.insert(nextRowItr, newRow);
 
-        // Insert the new line after the current line
-        if (!newRow.empty())
-        {
-            text.insert(newRowItr, newRow);
-        }
+        // Update the iterators to point to the beginning of the next line
 
-        // Move the iterators and update counters
         currentRow++;
         rowItr = text.begin();
         advance(rowItr, currentRow);
-        colItr = (*rowItr).begin();
-        currentCol = 0;
 
-        undo.push_back(getState());
+        currentCol = 0;
+        gotoRowColomn(currentRow, currentCol);
     }
-    
+    // backspace key
     void backSpaceOperation()
     {
-        undo.push_back(getState());
+        updateUndo();
 
         if (colItr == (*rowItr).begin())
         {
@@ -292,7 +302,7 @@ public:
                 // Move the cursor to the end of the previous line
                 colItr = (*prevRowItr).begin();
                 currentCol = (*prevRowItr).size();
-                
+
                 // Merge the current line into the previous line
                 (*prevRowItr).splice((*prevRowItr).end(), *rowItr);
 
@@ -307,13 +317,12 @@ public:
         }
         else
         {
-            
             colItr--;
             colItr = (*rowItr).erase(colItr);
             currentCol--;
         }
     }
-    //main input function
+    // main input function
     void input()
     {
         char ch;
@@ -321,22 +330,22 @@ public:
         {
             printText();
             ch = _getch();
-            // if (ch == 26) // ctrl+z
-            // {
-            //     undoOperation();
-            // }
-            // else if (ch == 25) // ctrl+y
-            // {
-            //     redoOperation();
-            // }
+            if (ch == 26) // ctrl+z
+            {
+                undoOperation();
+            }
+            else if (ch == 25) // ctrl+y
+            {
+                redoOperation();
+            }
             if (ch == 19) // ctrl+s
             {
                 save();
             }
-            // else if (ch == 13) // enter key
-            // {
-            //     newLineOperation();
-            // }
+            else if (ch == 13) // enter key
+            {
+                newLineOperation();
+            }
             else if (ch == 8) // backspace
             {
                 backSpaceOperation();
@@ -375,11 +384,12 @@ public:
             }
         }
     }
-    //insert in notepad
+    // insert in notepad
     void insertOperation(char ch)
     {
         if (isValidInput(ch))
         {
+            updateUndo();
             size_t offset = distance((*rowItr).begin(), colItr);
 
             (*rowItr).insert(colItr, ch);
@@ -513,13 +523,62 @@ void writeFiles(string newFile, string fileName = "files.txt")
     file << newFile << endl;
     file.close();
 }
+void printBox(int x, int y, int gotox, int gotoy)
+{
+    // x rows
+    // y coloms
+
+    for (int i = 0; i < y; i++)
+    {
+        for (int j = 0; j < x; j++)
+        {
+            gotoRowColomn(gotox + j, gotoy + i);
+            if (i == 0 || i == y - 1 || j == 0 || j == x - 1)
+            {
+                cout << "#";
+            }
+            else
+            {
+                cout << " ";
+            }
+        }
+    }
+}
+string getFileName()
+{
+    printBox(5, 50, 10, 10);
+    {
+        gotoRowColomn(12, 12);
+        cout << "Enter File Name(without .txt): ";
+        string fileName;
+        cin >> fileName;
+        fileName += ".txt";
+        return fileName;
+    }
+}
+void deleteFile()
+{
+}
+void makeFile(string fileName)
+{
+    ofstream file;
+    file.open(fileName);
+    file<<'\n';
+    file.close();
+}
 int main()
 {
     system("color F0");
-    textEditor editor = textEditor();
+    system("cls");
+    fileName = getFileName();
     readFiles();
-
-    editor.load();
+    if (!fileExist(fileName))
+    {
+        writeFiles(fileName);
+        makeFile(fileName);
+    }
+    textEditor editor = textEditor();
+    editor.load(fileName);
     editor.input();
 
     return 0;
