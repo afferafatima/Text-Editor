@@ -6,6 +6,7 @@
 #include <string>
 #include <windows.h>
 #include <conio.h>
+#include <vector>
 using namespace std;
 bool fileExist(string fileName);
 void readFiles(string fileName);
@@ -57,17 +58,16 @@ public:
         // Iterate through each row in the currentFile's text(deep copy)
         for (auto row = text.begin(); row != text.end(); r_itr++, ++row)
         {
-            // Create a new row in the state's text
-            s->text.push_back(list<char>());
-
             // Iterate through each character in the row
             for (auto col = (*row).begin(); col != (*row).end(); ++col)
             {
                 // Add a new character to the state's row
-                char ch = *col;
                 (*r_itr).push_back(*col);
             }
+            s->text.push_back(list<char>());
         }
+
+        s->text.pop_back(); // remove the last empty row
 
         // Find the row in the state's text that corresponds to the currentRow
         s->rowItr = s->text.begin();
@@ -76,34 +76,49 @@ public:
         // Find the column in the state's row that corresponds to the currentCol
         s->colItr = (*s->rowItr).begin();
         advance(s->colItr, currentCol); // loop
-
         // Set the row and column indices in the state
 
         return *s;
     }
+    void debugState(state s)
+    {
+        system("cls");
+        cout << "row: " << s.row << " col: " << s.col << endl;
+        for (auto itr = s.text.begin(); itr != s.text.end(); itr++)
+        {
+            for (auto itr2 = (*itr).begin(); itr2 != (*itr).end(); itr2++)
+            {
+                cout << *itr2;
+            }
+        }
+
+        getch();
+    }
     void loadState(state s)
     {
         text = s.text;
-        rowItr = text.begin();
         currentRow = s.row;
         currentCol = s.col;
+        rowItr = s.text.begin();
         advance(rowItr, currentRow);
         colItr = (*rowItr).begin();
         advance(colItr, currentCol);
+        // debugeditor();
     }
-    void debug()
+    void debugeditor()
     {
-        cout << "currentRow: " << currentRow << endl;
-        cout << "currentCol: " << currentCol << endl;
-        cout << "colItr: " << *colItr << endl;
+        system("cls");
+        cout << "currentRow: " << currentRow << " currentCol: " << currentCol << endl;
         cout << "rowItr: " << (*rowItr).size() << endl;
+        cout << "colItr: " << *colItr << endl;
+        cout << "text: " << endl;
         for (auto itr = text.begin(); itr != text.end(); itr++)
         {
             for (auto itr2 = (*itr).begin(); itr2 != (*itr).end(); itr2++)
             {
                 cout << *itr2;
             }
-            cout << endl;
+            // cout<<endl;
         }
         getch();
     }
@@ -170,7 +185,6 @@ public:
     // left arrow key
     void leftOperation()
     {
-
         if (colItr == (*rowItr).begin())
         {
             if (rowItr == text.begin())
@@ -328,15 +342,18 @@ public:
         char ch;
         while (true)
         {
-            printText();
             ch = _getch();
             if (ch == 26) // ctrl+z
             {
+
                 undoOperation();
+                printText(text);
             }
             else if (ch == 25) // ctrl+y
             {
+
                 redoOperation();
+                printText(text);
             }
             if (ch == 19) // ctrl+s
             {
@@ -344,11 +361,15 @@ public:
             }
             else if (ch == 13) // enter key
             {
+
                 newLineOperation();
+                printText(text);
             }
             else if (ch == 8) // backspace
             {
+
                 backSpaceOperation();
+                printText(text);
             }
             if (ch == 27) // escape
             {
@@ -376,11 +397,13 @@ public:
                 else if (ch == 83) // delete key
                 {
                     deleteOperation();
+                    printText(text);
                 }
             }
             else
             {
                 insertOperation(ch);
+                printText(text);
             }
         }
     }
@@ -454,7 +477,7 @@ public:
         advance(colItr, (*rowItr).size() - 1); // pointing to the end line character '\n'
         currentCol = (*rowItr).size() - 1;
     }
-    void printText()
+    void printText(list<list<char>> text)
     {
         system("cls");
         for (auto itr = text.begin(); itr != text.end(); itr++)
@@ -556,22 +579,25 @@ string getFileName()
         return fileName;
     }
 }
-void deleteFile()
+void deleteFile(string fileName)
 {
+    remove(fileName.c_str());
 }
 void makeFile(string fileName)
 {
     ofstream file;
     file.open(fileName);
-    file<<'\n';
+    file << '\n';
     file.close();
 }
+
 int main()
 {
     system("color F0");
     system("cls");
-    fileName = getFileName();
+
     readFiles();
+    fileName = getFileName();
     if (!fileExist(fileName))
     {
         writeFiles(fileName);
