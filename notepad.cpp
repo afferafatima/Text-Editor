@@ -48,13 +48,13 @@ public:
     }
     state getState()
     {
-        state *s = new state;
-        s->text.push_back(list<char>());
-        auto r_itr = s->text.begin(); // iterator of state s
-        s->row = currentRow;
-        s->col = currentCol;
-        s->colItr = colItr;
-        s->rowItr = rowItr;
+        state s;
+        s.text.push_back(list<char>());
+        auto r_itr = s.text.begin(); // iterator of state s
+        s.row = currentRow;
+        s.col = currentCol;
+        s.colItr = colItr;
+        s.rowItr = rowItr;
         // Iterate through each row in the currentFile's text(deep copy)
         for (auto row = text.begin(); row != text.end(); r_itr++, ++row)
         {
@@ -64,64 +64,47 @@ public:
                 // Add a new character to the state's row
                 (*r_itr).push_back(*col);
             }
-            s->text.push_back(list<char>());
+            s.text.push_back(list<char>());
         }
 
-        s->text.pop_back(); // remove the last empty row
+        s.text.pop_back(); // remove the last empty row
 
         // Find the row in the state's text that corresponds to the currentRow
-        s->rowItr = s->text.begin();
-        advance(s->rowItr, currentRow); // loop
+        s.rowItr = s.text.begin();
+        advance(s.rowItr, currentRow); // loop
 
         // Find the column in the state's row that corresponds to the currentCol
-        s->colItr = (*s->rowItr).begin();
-        advance(s->colItr, currentCol); // loop
+        s.colItr = (*s.rowItr).begin();
+        advance(s.colItr, currentCol); // loop
         // Set the row and column indices in the state
 
-        return *s;
+        return s;
     }
-    void debugState(state s)
-    {
-        system("cls");
-        cout << "row: " << s.row << " col: " << s.col << endl;
-        for (auto itr = s.text.begin(); itr != s.text.end(); itr++)
-        {
-            for (auto itr2 = (*itr).begin(); itr2 != (*itr).end(); itr2++)
-            {
-                cout << *itr2;
-            }
-        }
-
-        getch();
-    }
+    // load given state (previous state)
     void loadState(state s)
     {
+        // Clear existing text
+        for (auto row = text.begin(); row != text.end(); ++row)
+        {
+            (*row).clear();
+        }
+        text.clear();
+
+        // Initialize text with the loaded state's text
         text = s.text;
+
+        // Set iterators and counters to the values from the loaded state
         currentRow = s.row;
         currentCol = s.col;
-        rowItr = s.text.begin();
+        rowItr = text.begin();
         advance(rowItr, currentRow);
-        colItr = (*rowItr).begin();
+
+        colItr = rowItr->begin();
         advance(colItr, currentCol);
-        // debugeditor();
+
+        
     }
-    void debugeditor()
-    {
-        system("cls");
-        cout << "currentRow: " << currentRow << " currentCol: " << currentCol << endl;
-        cout << "rowItr: " << (*rowItr).size() << endl;
-        cout << "colItr: " << *colItr << endl;
-        cout << "text: " << endl;
-        for (auto itr = text.begin(); itr != text.end(); itr++)
-        {
-            for (auto itr2 = (*itr).begin(); itr2 != (*itr).end(); itr2++)
-            {
-                cout << *itr2;
-            }
-            // cout<<endl;
-        }
-        getch();
-    }
+   // undo key
     void undoOperation()
     {
         if (undo.empty())
@@ -129,11 +112,17 @@ public:
             // cout << "No undo operation available" << endl;
             return;
         }
-        redo.push(getState());
-        state s = undo.back();
+
+        state s = getState(); // Save the current state before applying undo
+
+        redo.push(s); // Push the current state onto the redo stack
+
+        s = undo.back(); // Get the state to undo
         undo.pop_back();
-        loadState(s);
+
+        loadState(s); // Load the state from undo stack
     }
+    // redo key
     void redoOperation()
     {
         if (redo.empty())
@@ -146,6 +135,7 @@ public:
         redo.pop();
         loadState(s);
     }
+    // update undo stack
     void updateUndo()
     {
         if (undo.size() > 5)
@@ -248,6 +238,7 @@ public:
         if (currentCol > (*rowItr).size() - 1)
         {
             currentCol = (*rowItr).size() - 1;
+            colItr=(*rowItr).begin();
             advance(colItr, currentCol);
         }
         else if (currentCol < (*rowItr).size())
@@ -339,6 +330,7 @@ public:
     // main input function
     void input()
     {
+        printText(text);
         char ch;
         while (true)
         {
@@ -422,6 +414,7 @@ public:
             currentCol++;
         }
     }
+    // save file
     void save(string filename = "test.txt")
     {
         ofstream file;
@@ -441,6 +434,7 @@ public:
         }
         file.close();
     }
+    // load file
     void load(string filename = "test.txt")
     {
         ifstream reader;
@@ -468,6 +462,7 @@ public:
         reader.close();
         updateItrToLast();
     }
+    //when program starts
     void updateItrToLast()
     {
         rowItr = text.begin();
@@ -490,14 +485,7 @@ public:
         }
         gotoRowColomn(currentRow, currentCol);
     }
-    void printRow(list<list<char>>::iterator rowItr)
-    {
-        gotoRowColomn(currentRow, 0);
-        for (auto colItr = rowItr->begin(); colItr != rowItr->end(); colItr++)
-        {
-            cout << *colItr;
-        }
-    }
+    // check if input is valid
     bool isValidInput(char ch)
     {
         return isupper(ch) || islower(ch) || isdigit(ch) || isspace(ch) || isSpecialCharacter(ch);
