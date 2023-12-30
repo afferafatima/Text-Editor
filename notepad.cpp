@@ -276,22 +276,22 @@ public:
     }
     // enter key
     void newLineOperation()
-    {
+    { 
 
         auto nextRowItr = next(rowItr);
         list<char> newRow(colItr, (*rowItr).end());
         (*rowItr).erase(colItr, (*rowItr).end());
         (*rowItr).push_back('\n');
         text.insert(nextRowItr, newRow);
-
+        
         // Update the iterators to point to the beginning of the next line
-
         currentRow++;
+        currentCol = 0;
         rowItr = text.begin();
         advance(rowItr, currentRow);
+        colItr=(*rowItr).begin();
 
-        currentCol = 0;
-        gotoRowColomn(currentRow, currentCol);
+        
     }
     // backspace key
     void backSpaceOperation()
@@ -362,6 +362,7 @@ public:
 
                 backSpaceOperation();
                 printText(text);
+               
             }
             if (ch == 27) // escape
             {
