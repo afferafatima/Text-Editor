@@ -283,15 +283,14 @@ public:
         (*rowItr).erase(colItr, (*rowItr).end());
         (*rowItr).push_back('\n');
         text.insert(nextRowItr, newRow);
-        
-        // Update the iterators to point to the beginning of the next line
-        currentRow++;
-        currentCol = 0;
-        rowItr = text.begin();
-        advance(rowItr, currentRow);
-        colItr=(*rowItr).begin();
 
-        
+        // Update the iterators to point to the beginning of the next line
+        nextRowItr--;
+        rowItr = nextRowItr;
+        colItr=(*rowItr).begin();
+        currentRow++;
+        currentCol = -1;
+
     }
     // backspace key
     void backSpaceOperation()
